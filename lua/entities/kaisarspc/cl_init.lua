@@ -57,7 +57,7 @@ function ENT:Draw()
                             table.insert(redDots, {x = x, y = y, alpha = 255})
                             local distance = LocalPlayer():GetPos():Distance(self:GetPos())
                             if distance <= 300 then
-                                local volume = 1 - (distance / 3000)
+                                local volume = 1 - (distance / 300)
                                 surface.PlaySound("common/warning.wav", volume)
                             end
                         end
