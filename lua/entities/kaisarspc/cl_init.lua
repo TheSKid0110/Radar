@@ -10,9 +10,21 @@ local function ReturnAngle(v1, v2, entityAng)
 end
 
 local redDots = {}
+local radarActive = false
+
+net.Receive("KaisarToggleRadar", function()
+    local ent = net.ReadEntity()
+    local state = net.ReadBool()
+
+    if IsValid(ent) and ent == LocalPlayer():GetEyeTrace().Entity then
+        radarActive = state
+    end
+end)
 
 function ENT:Draw()
     self:DrawModel()
+    if not radarActive then return end
+
     local pos = self:GetPos() + self:GetForward() * 12.38 + self:GetUp() * 3
     local ang = self:GetAngles()
     ang:RotateAroundAxis(ang:Right(), 94)
@@ -20,7 +32,7 @@ function ENT:Draw()
     ang:RotateAroundAxis(ang:Forward(), 180)
 
     cam.Start3D2D(pos, ang, 0.09)
-        local radarAngle = ((CurTime() * 100)) % 360
+        local radarAngle = (CurTime() * 100) % 360
         surface.SetMaterial(Material("radar.jpg"))
         surface.SetDrawColor(255, 255, 255, 255)
         surface.DrawTexturedRect(-100, -110, 200, 200)
@@ -38,28 +50,26 @@ function ENT:Draw()
 
                 local scale = 200 / 3000
                 local x = localPos.y * scale
-                local y = localPos.x * scale
+                local y = (localPos.x * scale) - 10
 
                 local playerAngle = (ReturnAngle(radarPos, playerPos, radarAng) + 180) % 360
 
                 local sweepWidth = 10
-                if math.abs(math.AngleDifference(radarAngle, playerAngle)) <= sweepWidth then
-                    if math.abs(x) <= 100 and math.abs(y) <= 100 then
-                        local exists = false
-                        for _, dot in ipairs(redDots) do
-                            if dot.x == x and dot.y == y then
-                                exists = true
-                                break
-                            end
+                if math.abs(math.AngleDifference(radarAngle, playerAngle)) <= sweepWidth and math.abs(x) <= 100 and math.abs(y) <= 100 then
+                    local exists = false
+                    for _, dot in ipairs(redDots) do
+                        if dot.x == x and dot.y == y then
+                            exists = true
+                            break
                         end
+                    end
 
-                        if not exists then
-                            table.insert(redDots, {x = x, y = y, alpha = 255})
-                            local distance = LocalPlayer():GetPos():Distance(self:GetPos())
-                            if distance <= 300 then
-                                local volume = 1 - (distance / 300)
-                                surface.PlaySound("common/warning.wav", volume)
-                            end
+                    if not exists then
+                        table.insert(redDots, {x = x, y = y, alpha = 255})
+                        local distance = LocalPlayer():GetPos():Distance(self:GetPos())
+                        if distance <= 300 then
+                            local volume = 1 - (distance / 300)
+                            surface.PlaySound("common/warning.wav", volume)
                         end
                     end
                 end
@@ -73,7 +83,7 @@ function ENT:Draw()
                 table.remove(redDots, i)
             end
         end
-        
+
         for _, dot in ipairs(redDots) do
             surface.SetMaterial(Material("red_dot.png"))
             surface.SetDrawColor(255, 0, 0, dot.alpha)
