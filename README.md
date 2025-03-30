@@ -1,3 +1,3 @@
 ## Radar project
 
-Works but questionable
+Detects players around the computer (Cool!)
